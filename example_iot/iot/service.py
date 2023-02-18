@@ -8,31 +8,35 @@ def generate_id(length: int=8):
     return ''.join(random.choices(string.ascii_uppercase, k=length))
 
 class Device(Protocol):
-    def connect(self):
+    async def connect(self):
         ...
-    def disconnect(self):
+    async def disconnect(self):
         ...
-    def send_message(self, message_type: MessageType, data: str):
+    async def send_message(self, message_type: MessageType, data: str):
         ...
     
 class IOTService:
     def __init__(self):
         self.devices: dict[str, Device] = {}
 
-    def register_device(self, device: Device):
-        device.connect()
+    async def register_device(self, device: Device):
+        await device.connect()
         device_id = generate_id()
         self.devices[device_id] = device
         return device_id
 
-    def unregister_device(self, device_id:str):
+    async def unregister_device(self, device_id:str):
+        await self.devices[device_id].disconnect()
         return self.devices[device_id]
     
-    def run_program(self, program: list[Message]):
+    def get_device(self, device_id: str):
+        return self.devices(device_id)
+
+    async def run_program(self, program: list[Message]):
         print('==========RUNNING PROGRAM==========')
         for msg in program:
-            self.send_msg(msg)
+            await self.send_msg(msg)
         print('==========END OF PROGRAM==========')
 
-    def send_msg(self, msg: Message):
-        self.devices[msg.device_id].send_message(msg.msg_type, msg.data)
+    async def send_msg(self, msg: Message):
+        await self.devices[msg.device_id].send_message(msg.msg_type, msg.data)
